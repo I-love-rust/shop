@@ -1,0 +1,56 @@
+version: '1.0'
+networks:
+  shop:
+    driver: bridge
+
+services:
+  api:
+    container_name: shop-api
+    build:
+      dockerfile: ./store-api/Dockerfile
+    expose:
+      - "3333"
+    networks:
+      - shop
+    depends_on:
+      - db
+    restart: "on-failure"
+
+  cash-api:
+    container_name: cash-api
+    build:
+      dockerfile: ./purchase-api/Dockerfile
+    expose:
+      - "7777"
+    networks:
+      - shop
+    restart: "on-failure"
+
+  web:
+    container_name: shop-web
+    build:
+      dockerfile: ./store-web/Dockerfile
+    expose:
+      - "1111"
+    ports:
+      - "1111:80"
+    networks:
+      - shop
+    depends_on:
+      - api
+    restart: "on-failure"
+
+  db:
+    container_name: shop-db
+    image: postgres
+    expose:
+      - "5432"
+    volumes:
+      - "./store-api/store/migrations/000001_init.up.sql:/docker-entrypoint-initdb.d/database.sql"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "12345"
+      POSTGRES_DB: "postgres"
+    networks:
+      - shop
+    restart: "on-failure"
